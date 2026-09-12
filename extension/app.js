@@ -89,11 +89,23 @@ $('capture').onclick=()=>safely(async()=>{
   try {
     const [tab]=await chrome.tabs.query({active:true,currentWindow:true});
     if(!tab?.id) throw Error('Tab aktif tidak ditemukan.');
+    if(tab.url && !isGoogleMapsUrl(tab.url)) throw Error('Tab aktif bukan Google Maps. Kembali ke tab profil bisnis, lalu klik ikon Prospek Lokal.');
+    if(!tab.url) throw Error('Izin tab belum aktif. Klik ikon Prospek Lokal pada tab Google Maps, lalu tekan tombol baca lagi.');
+    if(tab.status==='loading') throw Error('Profil bisnis belum selesai dimuat. Tunggu sebentar lalu coba lagi.');
+    if(typeof readMapsDetail!=='function') throw Error('Pembaca Maps belum termuat. Muat ulang ekstensi lalu buka kembali panel.');
     let results;
     try { results=await chrome.scripting.executeScript({target:{tabId:tab.id},func:readMapsDetail}); }
-    catch { throw Error('Buka satu profil bisnis Google Maps, klik ikon ekstensi pada tab itu, lalu coba lagi. Tidak bisa membaca tab dashboard atau halaman terbatas.'); }
-    if(!results?.[0]?.result?.name) throw Error('Detail bisnis tidak terbaca. Buka profil bisnis atau gunakan input manual.');
-    edit({...results[0].result,city:$('searchCity').value});
+    catch (error) {
+      console.warn('[Prospek capture] INJECTION_FAILED');
+      if(/No tab|closed|removed/i.test(error.message)) throw Error('Tab Maps sudah ditutup. Buka kembali profil bisnis.');
+      throw Error('Chrome belum mengizinkan pembacaan tab ini. Klik ikon Prospek Lokal langsung pada tab Maps lalu coba lagi. Jika baru diperbarui, tutup dan buka kembali panel.');
+    }
+    const result=results?.[0]?.result;
+    if(result?.error) {console.warn('[Prospek capture]',result.error.code);throw Error(result.error.message);}
+    if(!result?.name) throw Error('Tidak menemukan nama bisnis pada profil yang sedang dibuka.');
+    const [current]=await chrome.tabs.query({active:true,currentWindow:true});
+    if(current?.id!==tab.id || current?.url!==tab.url) throw Error('Tab atau profil berubah saat dibaca. Tekan baca lagi pada profil yang diinginkan.');
+    edit({...result,phone:C.phone(result.phone)});
   } finally {button.disabled=false;button.textContent='Baca bisnis yang dibuka';}
 });
 $('leadForm').onsubmit=async e=>{

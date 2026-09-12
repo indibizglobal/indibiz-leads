@@ -46,3 +46,11 @@ test('corrupt storage or restore rejected without changing current state',()=>{
     const bad=structuredClone(valid),target=structuredClone(valid);corrupt(bad);assert.throws(()=>C.restore(target,bad));assert.deepEqual(target,valid);
   }
 });
+test('not interested and revoked contacts stay ineligible after phone changes',()=>{
+  const s=C.empty(),l=C.save(s,input({status:'Tidak berminat'}));
+  assert.equal(C.eligible(s,l),false);
+  const revoked=C.save(s,{...l,consent:'revoked'},l.id,l.revision);
+  const changed=C.save(s,{...revoked,phone:'081299999999',consent:'yes',status:'Baru'},revoked.id,revoked.revision);
+  assert.equal(changed.consent,'revoked');assert.equal(C.eligible(s,changed),false);
+  assert.ok(s.blocked.includes(l.phone));assert.ok(s.blocked.includes(changed.phone));
+});

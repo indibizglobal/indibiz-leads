@@ -1,8 +1,8 @@
-# Prospek Lokal — IndiBiz v1.0.1
+# Prospek Lokal — IndiBiz v1.0.2
 
 ## Pembaruan penting 12 September 2026
 
-- Backup source sebelum perbaikan tersedia di folder `../backups/`. Ini backup kode, bukan data prospek browser.
+- Backup source sebelum perbaikan tersedia di folder `C:\Users\ASUS\indibiz-leads-backups\20260912-144422`. Ini backup kode, bukan data prospek browser.
 - Untuk memakai pembaruan: download backup JSON data terlebih dahulu, tutup tab/panel CRM lama, klik **Reload / Muat ulang** pada ekstensi di `chrome://extensions`, lalu buka kembali. Jangan uninstall ekstensi.
 - Nomor internasional harus menggunakan `+` atau `00` dan kode negara. Nomor Indonesia tetap menerima `08...` / `8...` / `62...`. Pemeriksaan ini hanya format, bukan verifikasi nomor aktif/terdaftar WhatsApp. Nomor yang sudah salah tersimpan oleh versi lama harus diperiksa manual; aplikasi tidak menebak nomor aslinya.
 - Mengganti nomor menghapus bukti dan waktu izin lama. Simpan nomor baru dahulu, lalu buka detail lagi untuk mencatat izin baru. Status jangan hubungi tetap dipertahankan.
@@ -10,7 +10,7 @@
 - Pencarian menerima nomor lokal berformat seperti `0812-3456-7890`.
 - **Pulihkan backup utuh** mengganti prospek, ID, tanggal, riwayat, dan pengaturan dari backup valid. Daftar jangan hubungi sekarang tetap digabungkan agar pemulihan backup lama tidak membuka blokir. Buat backup data sekarang sebelum menggantinya.
 - Storage diperiksa sebelum dibaca/ditulis. Data tidak valid ditolak, tidak dihapus otomatis. Pemulihan dari UI membutuhkan storage saat ini masih dapat dibaca; storage rusak memerlukan pemeriksaan terpisah agar data tidak tertimpa.
-- Belum ada integrasi Meta Cloud API, auto-send, atau server. Tidak ada permission Chrome baru.
+- Tidak ada integrasi Meta Cloud API atau auto-send. Server health opsional hanya mendengarkan `127.0.0.1:3000`; CRM tetap memakai storage browser, bukan server. Izin host hanya endpoint lokal tersebut.
 
 Ekstensi Chrome/Edge yang bekerja di browser lokal. **Tanpa Google Cloud, API key, server, npm install, dan biaya hosting.** Aplikasi tidak mengirim pesan otomatis.
 
@@ -21,7 +21,7 @@ Ekstensi Chrome/Edge yang bekerja di browser lokal. **Tanpa Google Cloud, API ke
 3. Aktifkan **Developer mode / Mode pengembang**.
 4. Klik **Load unpacked / Muat yang dibongkar**. Pilih folder yang langsung berisi `manifest.json`:
 
-   `C:\Users\ASUS\.openclaw\workspace\indibiz-browser-local`
+   `C:\Users\ASUS\indibiz-leads\extension`
 
    Jika ZIP diekstrak ke lokasi lain, gunakan folder hasil ekstraksi tersebut.
 5. Pin ekstensi **Prospek Lokal — IndiBiz** melalui menu ekstensi browser.
@@ -34,7 +34,7 @@ Chrome minimum 116; disarankan Chrome/Edge desktop terbaru. Browser lain, termas
 1. **Pesan & identitas**: isi nama sales, nama badan usaha/mitra yang sebenarnya, dan template. Harga/paket tidak diisi otomatis karena perlu verifikasi.
 2. **Prospek**: isi kategori (misalnya kafe) dan wilayah (Kediri), lalu **Cari di Maps**.
 3. Di tab Maps, buka **satu profil bisnis**, bukan hanya daftar pencarian. Klik ikon ekstensi pada tab tersebut, lalu **Baca bisnis yang dibuka**.
-4. Review nama, telepon, alamat, kategori, website, dan tautan Maps. Wilayah berasal dari isian pencarian; koreksi bila bisnis berada di luar wilayah tersebut. Data yang tidak tersedia dibiarkan kosong. Klik **Simpan prospek**. Bisa juga **Tambah manual**.
+4. Review nama, telepon, alamat, kategori, website, dan tautan Maps. Wilayah hanya dibaca bila alamat menyebut Kota/Kabupaten secara jelas; jika tidak, isi saat review. Data yang tidak tersedia dibiarkan kosong. Klik **Simpan prospek**. Bisa juga **Tambah manual**.
 5. Gunakan filter nama/nomor/wilayah, status, dan antrean follow-up. Nomor Indonesia dinormalisasi ke format 62. Nomor/alamat yang sama ditahan sebagai duplikat untuk ditinjau, termasuk kemungkinan nomor bersama antar cabang.
 6. Saat sudah mendapatkan izin WhatsApp, buka **Detail / edit**, pilih **Sudah ada izin**, isi **sumber/bukti** dan **waktu persetujuan**. Nomor publik dari Maps tidak otomatis memiliki izin. Aplikasi mencatat keterangan operator, bukan memverifikasi bukti ke layanan eksternal.
 7. Klik **Draf WhatsApp**, review/edit pesan, lalu **Buka WhatsApp Web**. Anda tetap memeriksa penerima dan menekan **Kirim** sendiri. Membuka draf tidak mengubah status menjadi terkirim.
@@ -72,8 +72,17 @@ Chrome minimum 116; disarankan Chrome/Edge desktop terbaru. Browser lain, termas
 
 ## Verifikasi pengembang
 
-Runtime aplikasi tidak membutuhkan dependency. `npm test` menjalankan 17 uji domain/regresi. `node --check app.js` memeriksa sintaks.
+Runtime aplikasi tidak membutuhkan dependency. `npm test` menjalankan uji domain/regresi, manifest, dan DOM Maps. `node --check app.js` memeriksa sintaks.
 
-Pengujian browser pada workspace ini menggunakan Playwright yang sudah tersedia di `../nusa-browser/node_modules/playwright` dan Edge lokal; tidak dibundel dalam paket runtime. Jalankan `node tests/browser.cjs` bila dependency tersebut tersedia. Tes memakai profil sementara terpisah, bukan profil utama.
+Dependency pengujian Playwright dipin di package-lock.json. Dari folder extension, jalankan `npm ci` (pengembang saja), `npm test`, `npm run test:browser`, lalu `npm run test:live`. Tes memakai Microsoft Edge lokal dan profil sementara terpisah, bukan profil utama. Tes live hanya membuka satu profil Alinea Kediri, tidak menyimpan data atau mengirim pesan. Runtime ekstensi tidak membutuhkan npm.
 
 Implementasi akses tab menggunakan [Chrome activeTab](https://developer.chrome.com/docs/extensions/develop/concepts/activeTab) dan [scripting API](https://developer.chrome.com/docs/extensions/reference/api/scripting), tanpa izin akses permanen ke seluruh situs.
+
+## Perbaikan capture 1.0.2
+
+- Manifest fisik divalidasi parser JSON; MV3, tanpa BOM atau izin situs luas.
+- Baca hanya profil `/maps/place/` aktif; hasil pencarian, heading tersembunyi, dan feed ditolak.
+- Selector semantic, aria-label, tel, dan data-item-id dipakai dengan scope profil. Kategori tidak ditebak dari tombol acak.
+- Nomor lokal/internasional dinormalisasi sebelum masuk form agar tidak menjadi `++62` atau `+08`.
+- Error izin tab, tab bukan Maps, loading, nama kosong, dan struktur DOM dibedakan. Log hanya kode error, bukan kontak.
+- Server opsional: dari folder server jalankan `npm ci`, `npm start`; uji dengan `npm test`. Endpoint `/health` bukan penyimpanan CRM dan tidak menerima kiriman kontak.

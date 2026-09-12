@@ -1,13 +1,29 @@
 {
   "manifest_version": 3,
   "name": "Prospek Lokal — IndiBiz",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Asisten prospek lokal: review bisnis, CRM, follow-up, dan draf WhatsApp tanpa auto-kirim.",
   "minimum_chrome_version": "116",
-  "permissions": ["storage", "activeTab", "scripting", "sidePanel"],
-  "action": {"default_title": "Buka Prospek Lokal"},
-  "background": {"service_worker": "background.js"},
-  "side_panel": {"default_path": "index.html"},
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:3000/*"
+  ],
+  "action": {
+    "default_title": "Buka Prospek Lokal"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  },
   "options_page": "index.html",
-  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'none'; connect-src 'none'"}
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src http://127.0.0.1:3000"
+  }
 }

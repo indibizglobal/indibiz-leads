@@ -5,5 +5,10 @@ node_modules/
 *.pem
 secrets/
 credentials/
+backups/
+*-backups/
+*.log
+test-results/
+playwright-report/
 extension/*.zip
 extension/META-REGISTRATION-REPORT.md

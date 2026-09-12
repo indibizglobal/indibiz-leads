@@ -1,4 +1,4 @@
-const {chromium}=require('../../nusa-browser/node_modules/playwright');
+const {chromium}=require('playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const root=path.resolve(__dirname,'..');
 (async()=>{
@@ -65,6 +65,40 @@ const root=path.resolve(__dirname,'..');
   await context.route('https://www.google.com/maps/place/Fixture',route=>route.fulfill({contentType:'text/html',body:'<main role="main"><h1 class="DUwDvf">Bisnis Fixture</h1><button data-item-id="phone:tel:+6282222222222">Nomor</button><button data-item-id="address"><span class="Io6YTe">Jl. Uji 1</span></button><button jsaction="pane.category">Kafe</button><a data-item-id="authority" href="https://example.com">Website</a></main>'}));
   const maps=await context.newPage();await maps.goto('https://www.google.com/maps/place/Fixture');await maps.addScriptTag({path:path.join(root,'capture.js')});const result=await maps.evaluate(()=>readMapsDetail());assert.equal(result.name,'Bisnis Fixture');assert.equal(result.phone,'+6282222222222');assert.equal(result.address,'Jl. Uji 1');
   console.log('PASS Maps detail DOM extraction fixture (live Maps not verified)');
+  assert.ok(worker, 'Native extension must load; standalone fallback is not a passing extension test');
+  // Contract tests for the side-panel click handler. Chrome API boundary is mocked;
+  // extraction above uses a real rendered DOM. No permission-grant claim is made.
+  await page.evaluate(r=>{
+    globalThis.captureApiOriginals={query:chrome.tabs.query,execute:chrome.scripting.executeScript};
+    chrome.tabs.query=async()=>[{id:123,url:r.maps,status:'complete'}];
+    chrome.scripting.executeScript=async()=>[{result:r}];
+    setView('prospects');
+  },result);
+  try {
+    await page.locator('#capture').click();await page.locator('#editor').waitFor();
+    assert.equal(await page.locator('[name=name]').inputValue(),'Bisnis Fixture');
+    assert.equal(await page.locator('[name=phone]').inputValue(),'+6282222222222');
+    assert.equal(await page.locator('[name=city]').inputValue(),'');
+    assert.equal(await page.locator('[name=consent]').inputValue(),'none');
+    await page.locator('[data-close=editor]').first().click();
+    await page.evaluate(()=>{chrome.tabs.query=async()=>[{id:123,url:'chrome://extensions'}];});
+    await page.locator('#capture').click();await page.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Tab aktif bukan Google Maps'));
+    await page.evaluate(()=>{chrome.tabs.query=async()=>[{id:123}];});
+    await page.locator('#capture').click();await page.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Izin tab belum aktif'));
+    await page.evaluate(()=>{
+      chrome.tabs.query=async()=>[{id:123,url:'https://www.google.com/maps/place/Test'}];
+      chrome.scripting.executeScript=async()=>[{result:{error:{code:'NO_NAME',message:'Tidak menemukan nama bisnis pada profil yang sedang dibuka.'}}}];
+    });
+    await page.locator('#capture').click();await page.waitForFunction(()=>document.querySelector('#notice').textContent.startsWith('Tidak menemukan nama bisnis'));
+    await page.evaluate(()=>{chrome.scripting.executeScript=async()=>{throw Error('Cannot access contents of the page');};});
+    await page.locator('#capture').click();await page.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Chrome belum mengizinkan'));
+    assert.equal(await page.locator('#capture').isEnabled(),true);
+    assert.equal(await page.locator('#editor').isVisible(),false);
+    assert.deepEqual(await page.evaluate(async()=>JSON.parse(JSON.stringify(await read()))),restored);
+    console.log('PASS capture click contract: normalized phone, no guessed city, no consent, actionable diagnostics, no data writes (Chrome API mocked)');
+  } finally {
+    await page.evaluate(()=>{chrome.tabs.query=captureApiOriginals.query;chrome.scripting.executeScript=captureApiOriginals.execute;delete globalThis.captureApiOriginals;});
+  }
   assert.deepEqual(errors,[]);console.log('PASS no page JavaScript errors; no WhatsApp messages sent');
  }finally{await context.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
