@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+*.key
+*.pem
+secrets/
+credentials/
+extension/*.zip
+extension/META-REGISTRATION-REPORT.md

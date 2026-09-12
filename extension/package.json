@@ -1,0 +1,1 @@
+{"name":"indibiz-browser-local","version":"1.0.1","private":true,"scripts":{"test":"node --test tests/core.test.cjs tests/regression.test.cjs"}}
